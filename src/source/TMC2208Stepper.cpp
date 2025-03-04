@@ -128,6 +128,11 @@ int TMC2208Stepper::available() {
 
 __attribute__((weak))
 void TMC2208Stepper::preWriteCommunication() {
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			SWSerial->enableTx(true);//Adapt TO MKS TinyBee V2.0 (esp32-s3)
+		} else
+	#endif
 	if (HWSerial != nullptr) {
 		if (sswitch != nullptr)
 			sswitch->active();
@@ -178,7 +183,13 @@ uint8_t TMC2208Stepper::serial_write(const uint8_t data) {
 }
 
 __attribute__((weak))
-void TMC2208Stepper::postWriteCommunication() {}
+void TMC2208Stepper::postWriteCommunication() {
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			SWSerial->enableTx(false);////Adapt TO MKS TinyBee V2.0 (esp32-s3)
+		} 
+	#endif
+}
 
 __attribute__((weak))
 void TMC2208Stepper::postReadCommunication() {
@@ -215,8 +226,9 @@ uint64_t TMC2208Stepper::_sendDatagram(uint8_t datagram[], const uint8_t len, ui
 			pinMode(RXTX_pin, OUTPUT);
 		}
 	#endif
-
+	preWriteCommunication();//Adapt TO MKS TinyBee V2.0 (esp32-s3)
 	for(int i=0; i<=len; i++) serial_write(datagram[i]);
+	postWriteCommunication();//Adapt TO MKS TinyBee V2.0 (esp32-s3)
 
 	#if defined(ARDUINO_ARCH_AVR)
 		if (RXTX_pin > 0) {
